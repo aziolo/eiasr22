@@ -1,4 +1,5 @@
 import warnings
+
 warnings.filterwarnings('ignore')
 
 import os
@@ -16,7 +17,6 @@ from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-
 
 
 def get_sample_data(template_path):
@@ -62,6 +62,7 @@ def prepare_data(codebook_path='Codebook'):
     print(dataset)
     return dataset
 
+
 def get_example(example_path):
     vertical, horizontal = get_sample_data(example_path)
     hogs = numpy.load(example_path)
@@ -75,29 +76,27 @@ def get_example(example_path):
     return example
 
 
-ddef create_model():
+def create_model():
+    model = Sequential()
+    model.add(Dense(144, input_dim=144, kernel_initializer='normal', activation='relu'))
+    model.add(Dense(2, kernel_initializer='normal'))
 
-	model = Sequential()
-	model.add(Dense(144, input_dim=144, kernel_initializer='normal', activation='relu'))
-	model.add(Dense(2, kernel_initializer='normal'))
-
-	model.compile(loss='mean_squared_error', optimizer='adam')
-	return model
+    model.compile(loss='mean_squared_error', optimizer='adam')
+    return model
 
 
 def loss_history_model(model, dataset):
-
     early_stopping_monitor = EarlyStopping(patience=10)
 
-    X = dataset[:,:-2]
-    Y = dataset[:,-2]
+    X = dataset[:, :-2]
+    Y = dataset[:, -2]
     scalar = MinMaxScaler()
     scalar.fit(X)
     X = scalar.transform(X)
-    history = model.fit(X, Y, validation_split=0.3, epochs=200, batch_size=1, verbose=1, callbacks=[early_stopping_monitor])
+    history = model.fit(X, Y, validation_split=0.3, epochs=200, batch_size=1, verbose=1,
+                        callbacks=[early_stopping_monitor])
 
     scores = model.evaluate(X, Y, verbose=1)
-
 
     plt.plot(history.history['loss'])
     plt.plot(history.history['val_loss'])
