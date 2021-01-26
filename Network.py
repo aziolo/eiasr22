@@ -9,6 +9,7 @@ from keras.models import Sequential
 from keras.layers import Dense, Dropout
 from keras.initializers import RandomUniform
 from keras.callbacks import EarlyStopping
+from keras import backend as K
 
 from sklearn.preprocessing import MinMaxScaler
 
@@ -61,45 +62,42 @@ def prepare_data(codebook_path='Codebook'):
     print(dataset)
     return dataset
 
+def get_example(example_path):
+    vertical, horizontal = get_sample_data(example_path)
+    hogs = numpy.load(example_path)
+    list_of_hogs = []
+    for x in hogs:
+        list_of_hogs.append(x[0])
 
-def create_model(dataset):
-    model = Sequential()
-    init = RandomUniform(minval=-0.05, maxval=0.05, seed=None)
+    list_of_hogs.append(horizontal)
+    list_of_hogs.append(vertical)
+    example = list_of_hogs[:-2]
+    return example
 
-    model.add(Dense(30, input_dim=144, kernel_initializer=init, bias_initializer=init, activation="sigmoid"))
-    model.add(Dropout(0.3))
 
-    model.add(Dense(20, kernel_initializer="uniform", bias_initializer="zeros", activation="sigmoid"))
-    model.add(Dropout(0.3))
+ddef create_model():
 
-    model.add(Dense(15, kernel_initializer="uniform", bias_initializer="zeros", activation="sigmoid"))
-    model.add(Dropout(0.3))
+	model = Sequential()
+	model.add(Dense(144, input_dim=144, kernel_initializer='normal', activation='relu'))
+	model.add(Dense(2, kernel_initializer='normal'))
 
-    model.add(Dense(2, kernel_initializer="uniform", bias_initializer="zeros", activation="softmax"))
+	model.compile(loss='mean_squared_error', optimizer='adam')
+	return model
 
-    model.compile(optimizer='adam', loss='mse', metrics=['accuracy'])
+
+def loss_history_model(model, dataset):
 
     early_stopping_monitor = EarlyStopping(patience=10)
 
-    X = dataset.iloc[:,:-2]
-    X = X.values
-    Y = dataset.iloc[:,-2:]
-    Y = Y.values
+    X = dataset[:,:-2]
+    Y = dataset[:,-2]
     scalar = MinMaxScaler()
     scalar.fit(X)
     X = scalar.transform(X)
     history = model.fit(X, Y, validation_split=0.3, epochs=200, batch_size=1, verbose=1, callbacks=[early_stopping_monitor])
 
     scores = model.evaluate(X, Y, verbose=1)
-    print("\n%s: %.2f%%" % (model.metrics_names[1], scores[1] * 100))
 
-    plt.plot(history.history['accuracy'])
-    plt.plot(history.history['val_accuracy'])
-    plt.title('model accuracy')
-    plt.ylabel('accuracy')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'test'], loc='upper left')
-    plt.show()
 
     plt.plot(history.history['loss'])
     plt.plot(history.history['val_loss'])
@@ -108,6 +106,8 @@ def create_model(dataset):
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Test'], loc='upper left')
     plt.show()
+
+    return None
 
 
 class Network:
